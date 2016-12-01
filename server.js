@@ -13,7 +13,7 @@ let getFromApi = function(endpoint, args) {
                 if (response.ok) {
                     emitter.emit('end', response.body);
                 } else {
-                    emitter.emit('error', response.code);
+                    emitter.emit('error', response.code);   // Attach error code instead of body
                 }
             });
     return emitter;
@@ -30,12 +30,13 @@ app.get('/search/:name', function(req, res) {
         type: 'artist'
     });
     
-    searchReq.on('end', function(item) {
+    // Success
+    searchReq.on('end', function(item) {    // Success!
         let artist = item.artists.items[0];
         res.json(artist);
     });
     
-    searchReq.on('error', function(code) {
+    searchReq.on('error', function(code) {  // Fail
         res.sendStatus(code);
     });
 });
