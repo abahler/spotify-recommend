@@ -1,5 +1,5 @@
-var unirest = require('unirest');
-var express = require('express');
+var unirest = require('unirest');   // For consuming external api
+var express = require('express');   // For serving our own routes
 var events = require('events');
 
 // `args` is an object provided to the endpoint's querystring
