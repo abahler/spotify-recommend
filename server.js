@@ -44,10 +44,11 @@ app.get('/search/:name', function(req, res) {
                                             // Note use of `var` instead of `let` here, 
                                             //    because the latter was seen as undefined in console, 
                                             //    and we need to be able to add properties to it
-        let id = artist.id;  // Need this for getting related artists
+        
+        // Now we need to retrieve related artists, using only the artist id
+        let id = artist.id;
 
-        // TIM: is this where I'm supposed to make a second call to Spotify for related artists?
-        var relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   // No query string args needed
+        var relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
         
         relatedArtistsReq.on('end', function(item) {    // Successfully grabbed related artists
             artist.related = item.artists;
