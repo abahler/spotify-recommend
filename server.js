@@ -40,7 +40,10 @@ app.get('/search/:name', function(req, res) {
     
     // Success
     searchReq.on('end', function(item) {    // Success!
-        let artist = item.artists.items[0];
+        let artist = item.artists.items[0]; // Parse artist name from response body
+        let id = artist.id;  // Need this for getting related artists
+        // console.log('Artist id: ', id);
+        
         res.json(artist);
     });
     
