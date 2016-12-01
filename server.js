@@ -1,10 +1,12 @@
-var unirest = require('unirest');   // For consuming external api
-var express = require('express');   // For serving our own routes
-var events = require('events');
+"use strict";
+
+let unirest = require('unirest');   // For consuming external api
+let express = require('express');   // For serving our own routes
+let events = require('events');
 
 // `args` is an object provided to the endpoint's querystring
-var getFromApi = function(endpoint, args) {
-    var emitter = new events.EventEmitter();    // Need an emitter to communicate that the 'get' worked or didn't
+let getFromApi = function(endpoint, args) {
+    let emitter = new events.EventEmitter();    // Need an emitter to communicate that the 'get' worked or didn't
     unirest.get('https://api.spotify.com/v1/' + endpoint)
            .qs(args)
            .end(function(response) {
@@ -18,18 +20,18 @@ var getFromApi = function(endpoint, args) {
 };
 
 // Set up routes
-var app = express();
+let app = express();
 app.use(express.static('public'));
 
 app.get('/search/:name', function(req, res) {
-    var searchReq = getFromApi('search', {
+    let searchReq = getFromApi('search', {
         q: req.params.name,
         limit: 1,
         type: 'artist'
     });
     
     searchReq.on('end', function(item) {
-        var artist = item.artists.items[0];
+        let artist = item.artists.items[0];
         res.json(artist);
     });
     
