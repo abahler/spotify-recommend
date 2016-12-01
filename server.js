@@ -38,16 +38,34 @@ app.get('/search/:name', function(req, res) {
         type: 'artist'
     });
     
-    // Success
-    searchReq.on('end', function(item) {    // Success!
-        let artist = item.artists.items[0]; // Parse artist name from response body
+    // Successfully retrieved artist information
+    searchReq.on('end', function(item) {
+        var artist = item.artists.items[0]; // Parse artist name from response body
+                                            // Note use of `var` instead of `let` here, 
+                                            //    because the latter was seen as undefined in console, 
+                                            //    and we need to be able to add properties to it
         let id = artist.id;  // Need this for getting related artists
-        // console.log('Artist id: ', id);
+
+        // TIM: is this where I'm supposed to make a second call to Spotify for related artists?
+        var relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   // No query string args needed
         
-        res.json(artist);
+        relatedArtistsReq.on('end', function(item) {    // Successfully grabbed related artists
+            artist.related = item.artists;
+            res.json(artist);    
+        });
+        
+        relatedArtistsReq.on('error', function(code) {
+            // Requirements tell us to send a 404, so disregard actual code returned
+            res.sendStatus(404);
+        });
+        
+        // This line was where we previously send the JSON to the client code (index.html),
+        // but that was before the second API call was implemented
+        
     });
     
-    searchReq.on('error', function(code) {  // Fail
+    // Failed to retrieve artist information
+    searchReq.on('error', function(code) { 
         res.sendStatus(code);
     });
 });
