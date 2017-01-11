@@ -1,8 +1,8 @@
 "use strict";
 
-let unirest = require('unirest');   // For consuming external api
+let unirest = require('unirest');   // For consuming external API
 let express = require('express');   // For serving our own routes
-let events = require('events');
+let events = require('events');     // For event emitters
 
 // Challenge: alter getFromApi function below to also get related artists. 
 // Must happen after 'end' event is emitted from first getFromApi call (to 'search')
@@ -17,7 +17,7 @@ let getFromApi = function(endpoint, args) {
     // with a query string that matches what is passed to .qs()
     unirest.get('https://api.spotify.com/v1/' + endpoint)   
            .qs(args)
-           .end(function(response) {
+           .end( (response) => {
                 if (response.ok) {
                     emitter.emit('end', response.body);
                 } else {
@@ -31,7 +31,7 @@ let getFromApi = function(endpoint, args) {
 let app = express();
 app.use(express.static('public'));
 
-app.get('/search/:name', function(req, res) {
+app.get('/search/:name', (req, res) => {
     let searchReq = getFromApi('search', {
         q: req.params.name,
         limit: 1,
@@ -39,7 +39,7 @@ app.get('/search/:name', function(req, res) {
     });
     
     // Successfully retrieved artist information
-    searchReq.on('end', function(item) {
+    searchReq.on('end', (item) => {
         var artist = item.artists.items[0]; // Parse artist name from response body
                                             // Note use of `var` instead of `let` here, 
                                             //    because the latter was seen as undefined in console, 
@@ -50,12 +50,12 @@ app.get('/search/:name', function(req, res) {
 
         var relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
         
-        relatedArtistsReq.on('end', function(item) {    // Successfully grabbed related artists
+        relatedArtistsReq.on('end', (item) => {    // Successfully grabbed related artists
             artist.related = item.artists;
             res.json(artist);    
         });
         
-        relatedArtistsReq.on('error', function(code) {
+        relatedArtistsReq.on('error', (code) => {
             // Requirements tell us to send a 404, so disregard actual code returned
             res.sendStatus(404);
         });
@@ -66,7 +66,7 @@ app.get('/search/:name', function(req, res) {
     });
     
     // Failed to retrieve artist information
-    searchReq.on('error', function(code) { 
+    searchReq.on('error', (code) => { 
         res.sendStatus(code);
     });
 });
