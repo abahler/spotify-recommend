@@ -4,11 +4,8 @@ let unirest = require('unirest');   // For consuming external API
 let express = require('express');   // For serving our own routes
 let events = require('events');     // For event emitters
 
-// Challenge: alter getFromApi function below to also get related artists. 
-// Must happen after 'end' event is emitted from first getFromApi call (to 'search')
-
 // `args` is an object provided to the endpoint's querystring
-let getFromApi = function(endpoint, args) {
+let getFromApi = (endpoint, args) => {
     let emitter = new events.EventEmitter();    // Need an emitter to communicate that the 'get' worked or didn't
     
     // The call to getFromApi() below hits 'https://api.spotify.com/v1/search', 
@@ -31,6 +28,7 @@ let getFromApi = function(endpoint, args) {
 let app = express();
 app.use(express.static('public'));
 
+// Code challenge: make request to 'top tracks' endpoint in parallel for each related artist
 app.get('/search/:name', (req, res) => {
     let searchReq = getFromApi('search', {
         q: req.params.name,
