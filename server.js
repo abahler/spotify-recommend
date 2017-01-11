@@ -1,4 +1,4 @@
-"use strict";
+"use strict";   // Necessary for ES2015 syntax to work
 
 let unirest = require('unirest');   // For consuming external API
 let express = require('express');   // For serving our own routes
