@@ -51,8 +51,8 @@ app.get('/search/:name', (req, res) => {
 
         let relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
         
-        relatedArtistsReq.on('end', (item) => {    // Successfully grabbed related artists
-            artist.related = item.artists;
+        relatedArtistsReq.on('end', (relatedItem) => {    // Successfully grabbed related artists
+            artist.related = relatedItem.artists;
             // res.json(artist);        // Comment out now that we're making a third API call (top tracks)
             
             // console.log('artist dot related: ', artist.related);
@@ -62,9 +62,9 @@ app.get('/search/:name', (req, res) => {
             artist.related.forEach( (v, i) => {
                 let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {});
                 
-                topTracksReq.on('end', (item) => {
+                topTracksReq.on('end', (tracksItem) => {
                     // Remember, `v` is the current artist in artist.related
-                    v.tracks = item.tracks;
+                    v.tracks = tracksItem.tracks;
                     
                     if (artistsProcessed == artist.related.length) { // We're done cycling through related artists
                         res.json(artist);
