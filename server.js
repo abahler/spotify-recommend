@@ -28,7 +28,10 @@ let getFromApi = (endpoint, args) => {
 let app = express();
 app.use(express.static('public'));
 
-// Code challenge: make request to 'top tracks' endpoint in parallel for each related artist
+// *** CODE CHALLENGE ***
+// Make request to 'top tracks' endpoint in parallel for each related artist
+// Initially, just get this working, whether it's async or synchronous. Then, rewrite if necessary to run in parallel.
+
 app.get('/search/:name', (req, res) => {
     let searchReq = getFromApi('search', {
         q: req.params.name,
@@ -46,11 +49,33 @@ app.get('/search/:name', (req, res) => {
         // Now we need to retrieve related artists, using only the artist id
         let id = artist.id;
 
-        var relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
+        let relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
         
         relatedArtistsReq.on('end', (item) => {    // Successfully grabbed related artists
             artist.related = item.artists;
-            res.json(artist);    
+            // res.json(artist);        // Comment out now that we're making a third API call (top tracks)
+            
+            // console.log('artist dot related: ', artist.related);
+            
+            // Now, send a request to the 'top tracks' endpoint for each artist
+            let artistsProcessed = 0;
+            artist.related.forEach( (v, i) => {
+                let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {});
+                
+                topTracksReq.on('end', (item) => {
+                    // Remember, `v` is the current artist in artist.related
+                    v.tracks = item.tracks;
+                    
+                    if (artistsProcessed == artist.related.length) { // We're done cycling through related artists
+                        res.json(artist);
+                    }
+                });
+                
+                topTracksReq.on('error', (code) => {
+                    res.sendStatus(code);
+                });
+            });
+            
         });
         
         relatedArtistsReq.on('error', (code) => {
