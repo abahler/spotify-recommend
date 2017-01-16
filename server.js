@@ -67,6 +67,7 @@ app.get('/search/:name', (req, res) => {
             artist.related.forEach( (v, i) => {
                 let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {
                     country: 'US'   // required, per the documentation
+                    // TODO: provide auth/token information? API docs say 'request requires authentication'
                 });
                 
                 topTracksReq.on('end', (tracksItem) => {
