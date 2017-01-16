@@ -18,7 +18,8 @@ let getFromApi = (endpoint, args) => {
                 if (response.ok) {
                     emitter.emit('end', response.body);
                 } else {
-                    emitter.emit('error', response.code);   // Attach error code instead of body
+                    // emitter.emit('error', response.code);   // Attach error code instead of body
+                    emitter.emit('error', response.body);
                 }
             });
     return emitter;
@@ -51,7 +52,10 @@ app.get('/search/:name', (req, res) => {
 
         let relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
         
+        // res.send({test:'test'});
+    
         relatedArtistsReq.on('end', (relatedItem) => {    // Successfully grabbed related artists
+            console.log('The related artists API call was successful!');
             artist.related = relatedItem.artists;
             // res.json(artist);        // Comment out now that we're making a third API call (top tracks)
             
@@ -59,25 +63,33 @@ app.get('/search/:name', (req, res) => {
             
             // Now, send a request to the 'top tracks' endpoint for each artist
             let artistsProcessed = 0;
+            let completedReqs = [];
             artist.related.forEach( (v, i) => {
                 let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {});
                 
                 topTracksReq.on('end', (tracksItem) => {
-                    // Remember, `v` is the current artist in artist.related
                     v.tracks = tracksItem.tracks;
                     
+                    /*
                     if (artistsProcessed == artist.related.length) { // We're done cycling through related artists
+                        // This caused your 'cannot send header after already sent' error
                         res.json(artist);
                     }
+                    */
+                    
                 });
                 
                 topTracksReq.on('error', (code) => {
-                    res.sendStatus(code);
+                    console.log('Error code: ', code);
+                    console.log('Response body from API: ', topTracksReq);
+                    // res.sendStatus(code);
                 });
             });
             
+            console.log('Artist: ', artist);
+            res.json(artist);
         });
-        
+         
         relatedArtistsReq.on('error', (code) => {
             // Requirements tell us to send a 404, so disregard actual code returned
             res.sendStatus(404);
