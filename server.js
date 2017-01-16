@@ -18,8 +18,8 @@ let getFromApi = (endpoint, args) => {
                 if (response.ok) {
                     emitter.emit('end', response.body);
                 } else {
-                    // emitter.emit('error', response.code);   // Attach error code instead of body
-                    emitter.emit('error', response.body);
+                    emitter.emit('error', response.code);   // Attach error code instead of body
+                    // emitter.emit('error', response.body); // Debugging only
                 }
             });
     return emitter;
@@ -42,6 +42,7 @@ app.get('/search/:name', (req, res) => {
     
     // Successfully retrieved artist information
     searchReq.on('end', (item) => {
+        console.log('Item (response from first API call): ', item);
         var artist = item.artists.items[0]; // Parse artist name from response body
                                             // Note use of `var` instead of `let` here, 
                                             //    because the latter was seen as undefined in console, 
@@ -55,28 +56,21 @@ app.get('/search/:name', (req, res) => {
         // res.send({test:'test'});
     
         relatedArtistsReq.on('end', (relatedItem) => {    // Successfully grabbed related artists
-            console.log('The related artists API call was successful!');
             artist.related = relatedItem.artists;
             // res.json(artist);        // Comment out now that we're making a third API call (top tracks)
             
-            // console.log('artist dot related: ', artist.related);
+            console.log('artist dot related: ', artist.related);
             
             // Now, send a request to the 'top tracks' endpoint for each artist
             let artistsProcessed = 0;
             let completedReqs = [];
             artist.related.forEach( (v, i) => {
-                let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {});
+                let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {
+                    country: 'US'   // required, per the documentation
+                });
                 
                 topTracksReq.on('end', (tracksItem) => {
-                    v.tracks = tracksItem.tracks;
-                    
-                    /*
-                    if (artistsProcessed == artist.related.length) { // We're done cycling through related artists
-                        // This caused your 'cannot send header after already sent' error
-                        res.json(artist);
-                    }
-                    */
-                    
+                    v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
                 });
                 
                 topTracksReq.on('error', (code) => {
