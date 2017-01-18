@@ -59,30 +59,43 @@ app.get('/search/:name', (req, res) => {
             artist.related = relatedItem.artists;
             // res.json(artist);        // Comment out now that we're making a third API call (top tracks)
             
-            console.log('artist dot related: ', artist.related);
-            
             // Now, send a request to the 'top tracks' endpoint for each artist
-            let artistsProcessed = 0;
-            let completedReqs = [];
+            let topTracksErrors = [];
             artist.related.forEach( (v, i) => {
+                /*
+                // Confirms we are properly accessing artist id
+                console.log('v dot id: ', v.id);
+                console.log('v dot name: ', v.name);
+                console.log('i: ', i);
+                */
+                
                 let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {
                     country: 'US'   // required, per the documentation
                     // TODO: provide auth/token information? API docs say 'request requires authentication'
                 });
                 
                 topTracksReq.on('end', (tracksItem) => {
+                    console.log('The end event was emitted!');
                     v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
+                    console.log(v);
                 });
                 
                 topTracksReq.on('error', (code) => {
+                    console.log('The error event was emitted!');
                     console.log('Error code: ', code);
                     console.log('Response body from API: ', topTracksReq);
+                    topTracksErrors.push(code);
                     // res.sendStatus(code);
                 });
             });
-            
-            console.log('Artist: ', artist);
+
+            if (topTracksErrors.length > 0) {
+                console.log('There were errors with some of the top-tracks requests:');
+                console.log(topTracksErrors);
+            }            
+
             res.json(artist);
+
         });
          
         relatedArtistsReq.on('error', (code) => {
@@ -92,6 +105,8 @@ app.get('/search/:name', (req, res) => {
         
         // This line was where we previously send the JSON to the client code (index.html),
         // but that was before the second API call was implemented
+        
+        // NOTE: tried placing top-tracks requests outside relatedArtistsReq, but artist.related was undefined
         
     });
     
