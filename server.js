@@ -63,7 +63,7 @@ app.get('/search/:name', (req, res) => {
             let topTracksErrors = [];
             artist.related.forEach( (v, i) => {
                 /*
-                // Confirms we are properly accessing artist id
+                // Confirms we are properly accessing artist id:
                 console.log('v dot id: ', v.id);
                 console.log('v dot name: ', v.name);
                 console.log('i: ', i);
@@ -74,10 +74,15 @@ app.get('/search/:name', (req, res) => {
                     // TODO: provide auth/token information? API docs say 'request requires authentication'
                 });
                 
+                let completedTopTracksReqs = 0;
                 topTracksReq.on('end', (tracksItem) => {
                     console.log('The end event was emitted!');
                     v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
-                    console.log(v);
+                    // console.log(v);
+                    completedTopTracksReqs += 1;
+                    if (completedTopTracksReqs == 20) { // 'Related artists' retrieves 20
+                        res.json(artist);   
+                    }
                 });
                 
                 topTracksReq.on('error', (code) => {
@@ -93,8 +98,6 @@ app.get('/search/:name', (req, res) => {
                 console.log('There were errors with some of the top-tracks requests:');
                 console.log(topTracksErrors);
             }            
-
-            res.json(artist);
 
         });
          
