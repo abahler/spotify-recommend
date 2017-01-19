@@ -42,7 +42,6 @@ app.get('/search/:name', (req, res) => {
     
     // Successfully retrieved artist information
     searchReq.on('end', (item) => {
-        console.log('Item (response from first API call): ', item);
         var artist = item.artists.items[0]; // Parse artist name from response body
                                             // Note use of `var` instead of `let` here, 
                                             //    because the latter was seen as undefined in console, 
@@ -77,8 +76,8 @@ app.get('/search/:name', (req, res) => {
                 let completedTopTracksReqs = 0;
                 topTracksReq.on('end', (tracksItem) => {
                     console.log('The end event was emitted!');
+                    console.log('Value of v: ', v);
                     v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
-                    // console.log(v);
                     completedTopTracksReqs += 1;
                     if (completedTopTracksReqs == 20) { // 'Related artists' retrieves 20
                         res.json(artist);   
