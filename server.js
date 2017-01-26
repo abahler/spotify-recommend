@@ -60,26 +60,27 @@ app.get('/search/:name', (req, res) => {
             
             // Now, send a request to the 'top tracks' endpoint for each artist
             let topTracksErrors = [];
+            let completedTopTracksReqs = 0;
             artist.related.forEach( (v, i) => {
-                /*
+                
                 // Confirms we are properly accessing artist id:
                 console.log('v dot id: ', v.id);
                 console.log('v dot name: ', v.name);
                 console.log('i: ', i);
-                */
                 
-                let topTracksReq = getFromApi('/artists/' + v.id + '/top-tracks', {
-                    country: 'US'   // required, per the documentation
-                    // TODO: provide auth/token information? API docs say 'request requires authentication'
-                });
                 
-                let completedTopTracksReqs = 0;
+                let topTracksReq = getFromApi('artists/' + v.id + '/top-tracks', { country: 'US' });
+         
                 topTracksReq.on('end', (tracksItem) => {
-                    console.log('The end event was emitted!');
-                    console.log('Value of v: ', v);
+                    // console.log(tracksItem);
+                
+                    // console.log('The end event was emitted!');
+                    // console.log('Value of v dot tracks (before setting): ', v.tracks);
                     v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
+                    // console.log('Value of v dot tracks (after setting): ', v.tracks);
                     completedTopTracksReqs += 1;
-                    if (completedTopTracksReqs == 20) { // 'Related artists' retrieves 20
+                    if (completedTopTracksReqs == 19) { // 'Related artists' retrieves 20
+                        console.log('artist: ', artist);
                         res.json(artist);   
                     }
                 });
@@ -96,7 +97,7 @@ app.get('/search/:name', (req, res) => {
             if (topTracksErrors.length > 0) {
                 console.log('There were errors with some of the top-tracks requests:');
                 console.log(topTracksErrors);
-            }            
+            }
 
         });
          
