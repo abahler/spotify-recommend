@@ -19,7 +19,6 @@ let getFromApi = (endpoint, args) => {
                     emitter.emit('end', response.body);
                 } else {
                     emitter.emit('error', response.code);   // Attach error code instead of body
-                    // emitter.emit('error', response.body); // Debugging only
                 }
             });
     return emitter;
@@ -28,10 +27,6 @@ let getFromApi = (endpoint, args) => {
 // Set up routes
 let app = express();
 app.use(express.static('public'));
-
-// *** CODE CHALLENGE ***
-// Make request to 'top tracks' endpoint in parallel for each related artist
-// Initially, just get this working, whether it's async or synchronous. Then, rewrite if necessary to run in parallel.
 
 app.get('/search/:name', (req, res) => {
     let searchReq = getFromApi('search', {
@@ -61,25 +56,21 @@ app.get('/search/:name', (req, res) => {
             // Now, send a request to the 'top tracks' endpoint for each artist
             let topTracksErrors = [];
             let completedTopTracksReqs = 0;
+            let len = artist.related.length;
             artist.related.forEach( (v, i) => {
                 
                 // Confirms we are properly accessing artist id:
-                console.log('v dot id: ', v.id);
-                console.log('v dot name: ', v.name);
-                console.log('i: ', i);
-                
+                // console.log('v dot id: ', v.id);
+                console.log('Making top tracks request for: ', v.name);
+                // console.log('i: ', i);
                 
                 let topTracksReq = getFromApi('artists/' + v.id + '/top-tracks', { country: 'US' });
          
                 topTracksReq.on('end', (tracksItem) => {
-                    // console.log(tracksItem);
-                
-                    // console.log('The end event was emitted!');
-                    // console.log('Value of v dot tracks (before setting): ', v.tracks);
+                    console.log('The end event was emitted for ' + v);
                     v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
-                    // console.log('Value of v dot tracks (after setting): ', v.tracks);
                     completedTopTracksReqs += 1;
-                    if (completedTopTracksReqs == 19) { // 'Related artists' retrieves 20
+                    if (completedTopTracksReqs == len) { // 'Related artists' retrieves 20
                         console.log('artist: ', artist);
                         res.json(artist);   
                     }
