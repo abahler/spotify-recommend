@@ -1,12 +1,11 @@
 "use strict";   // Necessary for ES2015 syntax to work
 
-let unirest = require('unirest');   // For consuming external API
-let express = require('express');   // For serving our own routes
-let events = require('events');     // For event emitters
+let unirest = require('unirest');
+let express = require('express');  
+let events = require('events'); 
 
-// `args` is an object provided to the endpoint's querystring
 let getFromApi = (endpoint, args) => {
-    let emitter = new events.EventEmitter();    // Need an emitter to communicate that the 'get' worked or didn't
+    let emitter = new events.EventEmitter();    // Need an emitter to communicate nature of the response
     
     // The call to getFromApi() below hits 'https://api.spotify.com/v1/search', 
     // which differs from the endpoint at the top of the doc page for that service (https://developer.spotify.com/web-api/get-artist/).
@@ -18,7 +17,7 @@ let getFromApi = (endpoint, args) => {
                 if (response.ok) {
                     emitter.emit('end', response.body);
                 } else {
-                    emitter.emit('error', response.code);   // Attach error code instead of body
+                    emitter.emit('error', response.code); 
                 }
             });
     return emitter;
@@ -47,64 +46,52 @@ app.get('/search/:name', (req, res) => {
 
         let relatedArtistsReq = getFromApi('artists/' + id + '/related-artists', {});   
         
-        // res.send({test:'test'});
-    
         relatedArtistsReq.on('end', (relatedItem) => {    // Successfully grabbed related artists
             artist.related = relatedItem.artists;
-            // res.json(artist);        // Comment out now that we're making a third API call (top tracks)
-            
+            // This line is where we would send the response to the client if this was our last request
+
             // Now, send a request to the 'top tracks' endpoint for each artist
             let topTracksErrors = [];
             let completedTopTracksReqs = 0;
-            let len = artist.related.length;
+            let len = artist.related.length;    // Just a small optimization since we'll use that on each iteration
             artist.related.forEach( (v, i) => {
-                
-                // Confirms we are properly accessing artist id:
-                // console.log('v dot id: ', v.id);
-                console.log('Making top tracks request for: ', v.name);
-                // console.log('i: ', i);
                 
                 let topTracksReq = getFromApi('artists/' + v.id + '/top-tracks', { country: 'US' });
          
                 topTracksReq.on('end', (tracksItem) => {
-                    console.log('The end event was emitted for ' + v);
                     v.tracks = tracksItem.tracks;   // Operates on a reference, so modification will outlast loop
                     completedTopTracksReqs += 1;
-                    if (completedTopTracksReqs == len) { // 'Related artists' retrieves 20
-                        console.log('artist: ', artist);
+                    if (completedTopTracksReqs == len) {
                         res.json(artist);   
                     }
                 });
                 
                 topTracksReq.on('error', (code) => {
-                    console.log('The error event was emitted!');
-                    console.log('Error code: ', code);
-                    console.log('Response body from API: ', topTracksReq);
+                    // Show the user a simple error message. 
+                    // index.html expects an array of songs to iterate through
+                    v.tracks = ['Could not retrieve top tracks for this artist.'];
+                    // Add to our errors array for a more detailed look upon completion
                     topTracksErrors.push(code);
-                    // res.sendStatus(code);
                 });
             });
 
+            
             if (topTracksErrors.length > 0) {
-                console.log('There were errors with some of the top-tracks requests:');
+                console.log('----------');
+                console.log('Some top-tracks requests came back with errors. Details:');
                 console.log(topTracksErrors);
+                console.log('----------');
             }
 
         });
          
         relatedArtistsReq.on('error', (code) => {
-            // Requirements tell us to send a 404, so disregard actual code returned
+            // Requirements say to send a 404, so disregard actual code returned
             res.sendStatus(404);
         });
         
-        // This line was where we previously send the JSON to the client code (index.html),
-        // but that was before the second API call was implemented
-        
-        // NOTE: tried placing top-tracks requests outside relatedArtistsReq, but artist.related was undefined
-        
     });
     
-    // Failed to retrieve artist information
     searchReq.on('error', (code) => { 
         res.sendStatus(code);
     });
