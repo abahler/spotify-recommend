@@ -75,14 +75,6 @@ app.get('/search/:name', (req, res) => {
                 });
             });
 
-            
-            if (topTracksErrors.length > 0) {
-                console.log('----------');
-                console.log('Some top-tracks requests came back with errors. Details:');
-                console.log(topTracksErrors);
-                console.log('----------');
-            }
-
         });
          
         relatedArtistsReq.on('error', (code) => {
